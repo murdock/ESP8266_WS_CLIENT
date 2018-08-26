@@ -2,7 +2,7 @@ const char *wsHost = "192.168.1.7";
 int wsPort = 44444;
 const char *wsPOST = "192.168.1.7:44444";
 String buffer;
-#define USE_SERIAL Serial1
+
 #define DHT11_PIN D4
 #define MQ135_PIN A0
 #define RXPin D6
@@ -127,7 +127,7 @@ void setup ( void ) {
     server.on ( "/inline", []() {
       server.send ( 200, "text/plain", "this works as well" );
     } );
-    //server.on ( "/test", sendMessage );
+    server.on ( "/getData", sendDataMessage);
     server.onNotFound ( handleNotFound );
     server.begin();
     Serial.println ( "HTTP server started" );
@@ -143,6 +143,11 @@ void setup ( void ) {
   
     // try ever 5000 again if connection has failed
     webSocket.setReconnectInterval(10000);
+}
+void sendDataMessage(){
+  String data;
+  root.printTo(data);
+    server.send ( 200, "text/plain", data );
 }
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
  
@@ -160,6 +165,7 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
       Serial.println("Failed to read from MQ sensor!");
       return;
     }
+    root["sensor"] = true;
     root["temperature"] = t;
     root["humidity"] = h;
     root["airQuality"] = air;
@@ -180,24 +186,25 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
     
   switch(type) {
     case WStype_DISCONNECTED:
-      USE_SERIAL.printf("[WSc] Disconnected!\n");
+      Serial.printf("[WSc] Disconnected!\n");
       break;
     case WStype_CONNECTED: {
-      USE_SERIAL.printf("[WSc] Connected to url: %s\n", payload);
+      Serial.printf("[WSc] Connected to url: %s\n", payload);
 
       // send message to server when Connected
-      char *msg = "[\"CONNECT\\naccept-version:1.1,1.0\\nheart-beat:10000,10000\\n\\n\\u0000\"]";
-      webSocket.sendTXT(msg);
+      //char *msg = "{ESP8266: CONNECTED}";
+      webSocket.sendTXT(data);
     }
       break;
     case WStype_TEXT:
-      USE_SERIAL.printf("[WSc] get text: %s\n", payload);
+      Serial.printf("[WSc] get text: %s\n", payload);
 
       // send message to server
+      delay(3000);
       webSocket.sendTXT(data);
       break;
     case WStype_BIN:
-      USE_SERIAL.printf("[WSc] get binary length: %u\n", length);
+      Serial.printf("[WSc] get binary length: %u\n", length);
       hexdump(payload, length);
       // send data to server
       webSocket.sendBIN(payload, length);
@@ -235,5 +242,5 @@ void loop ( void ) {
   webSocket.loop();
   server.handleClient();
   handleGPS();
-  delay(5000);
+  //delay(5000);
 }
