@@ -1,2 +1,2 @@
-# ESP8266_WS_CLIENT
-ESP8266 Websocket Client
+# MULTI_SENSOR SERVER
+ESP8266 MultiSensor Server
