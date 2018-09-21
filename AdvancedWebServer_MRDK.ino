@@ -1,4 +1,4 @@
-const char* mdnsName = "multisensor";
+const char* mdnsName = "observer";
 const char* htmlfile = "/index.html";
 #include <FS.h>   //Include File System Headers
 
@@ -7,7 +7,7 @@ const char* htmlfile = "/index.html";
 #define RXPin D6
 #define TXPin D7
 #define GPSBaud 9600
-#define pinReset 9 // Reset button D9
+#define pinReset D9 // Reset button D9
 #include <dht.h>
 #include <ESP8266WiFi.h>
 #include <WiFiManager.h>
@@ -18,7 +18,7 @@ const char* htmlfile = "/index.html";
 #include <ArduinoJson.h>
 #include <SoftwareSerial.h>
 #include <TinyGPS++.h>
-
+#include <TFT_eSPI.h>
 TinyGPSPlus gps;
 dht DHT;
 ESP8266WebServer server ( 80 );
@@ -73,19 +73,10 @@ void handleWebRequests(){
   Serial.println(message);
 }
 void setup ( void ) {
-	Serial.begin (115200);
+  Serial.begin (115200);
   ss.begin(GPSBaud);
   Serial.println("*****");
   Serial.println("GPS Initialized");
-  
-  //create portal
-  Serial.println("softAP initialized...");
-  Serial.println(WiFi.softAP("MultisensorPortal", "001122") ? "Ready" : "Failed!");
-  IPAddress myIP = WiFi.softAPIP();
-  Serial.print("AP IP address: ");
-  Serial.println(myIP);
-  Serial.println("connected to:");
-  Serial.println(WiFi.SSID());
   
   //read configuration from FS json
   Serial.println("mounting FS...");
@@ -143,7 +134,7 @@ void setup ( void ) {
   wifiManager.addParameter(&custom_multipass_port);
   wifiManager.addParameter(&custom_multipass_token);
   
-  if (!wifiManager.autoConnect("MultisensorSetup", "password*")) {
+  if (!wifiManager.autoConnect("ObserverSetup", "password*")) {
     Serial.println("failed to connect and hit timeout");
     delay(3000);
     //reset and try again
@@ -178,6 +169,7 @@ void setup ( void ) {
 
   Serial.println("local ip");
   Serial.println(WiFi.localIP());
+  WiFi.persistent(false);
 
   if (MDNS.begin("esp8266", WiFi.localIP())) {
       MDNS.begin(mdnsName); // start the multicast domain name server
